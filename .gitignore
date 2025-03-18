@@ -1,0 +1,5 @@
+secret_api_keys.py
+.venv
+temp.pdf
+__pycache__/secret_api_keys.cpython-310.pyc
+.vscode/settings.json
