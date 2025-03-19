@@ -6,7 +6,9 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEndpoint
-from secret_api_keys import huggingface_api_key
+
+
+huggingface_api_key = st.secrets["huggingface_api_key"]
 
 
 def extract_text(page):
