@@ -18,11 +18,11 @@ st.sidebar.header("Upload Document")
 uploaded_file = st.sidebar.file_uploader("Upload a PDF file", type=["pdf"])
 
 if uploaded_file is not None:
+    st.write("Reading file...")
     with open("temp.pdf", "wb") as f:
         f.write(uploaded_file.read())
 
     # Load PDF and extract text
-    st.write('Reading file...')
     reader = PdfReader("temp.pdf")
     text = "\n".join(
         [page.extract_text() for page in reader.pages if page.extract_text()]
@@ -40,6 +40,8 @@ if uploaded_file is not None:
     embeddings = HuggingFaceEmbeddings(
         model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
     )
+
+    st.write('Creating vector store')
     vectorstore = FAISS.from_documents(docs, embeddings)
     retriever = vectorstore.as_retriever(
         search_kwargs={"k": 10}
