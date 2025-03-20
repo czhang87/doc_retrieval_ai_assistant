@@ -9,12 +9,6 @@ from langchain_huggingface import HuggingFaceEndpoint
 
 
 huggingface_api_key = st.secrets["huggingface_api_key"]
-
-
-def extract_text(page):
-    return page.extract_text()
-
-
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_key
 
 # Streamlit UI
@@ -28,6 +22,7 @@ if uploaded_file is not None:
         f.write(uploaded_file.read())
 
     # Load PDF and extract text
+    st.write('Reading file...')
     reader = PdfReader("temp.pdf")
     text = "\n".join(
         [page.extract_text() for page in reader.pages if page.extract_text()]
@@ -38,6 +33,7 @@ if uploaded_file is not None:
     docs = text_splitter.create_documents([text])
 
     # Convert to embeddings and store in FAISS
+    st.write('Creating embedding...')
     model_name = "sentence-transformers/all-mpnet-base-v2"
     model_kwargs = {"device": "cpu"}
     encode_kwargs = {"normalize_embeddings": False}
@@ -62,6 +58,7 @@ if uploaded_file is not None:
     submit_button = st.button("Submit")
 
     if submit_button and query:
+        st.write('Searching for the answer...')
         response = qa_chain.invoke({"query": query})
         st.write("### Answer:")
         st.write(response["result"])
