@@ -1,55 +1,77 @@
 import os
+from io import BytesIO
 import time
 import streamlit as st
 import fitz  # PyMuPDF
-from io import BytesIO
+import docx
+import pypandoc
+import requests
+from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEndpoint
 
+# Load API key from Streamlit secrets
 huggingface_api_key = st.secrets["huggingface_api_key"]
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_key
 
-# Streamlit UI
-st.title("📄 AccuFetch")
-st.subheader("Find What Matters, Instantly!")
-# Add a description under the subheader
-st.markdown(
-"""
-    This tool allows you to **upload documents** and extract key information using AI-powered models. 
 
-    **Please note:** The initial document reading and processing might take some time, especially for large documents. Once it's done, you can start asking questions to get detailed answers.
+# Function to extract text from different file types
+def extract_text_from_file(uploaded_file):
+    file_type = uploaded_file.name.split(".")[-1].lower()
 
-    - **Upload documents**: Use the sidebar to upload your document.
-    - **Ask questions**: Type your queries in the text box.
-    - **Click Submit button**
-"""
-)
-st.sidebar.header("Upload Document")
-uploaded_file = st.sidebar.file_uploader("Upload a PDF file", type=["pdf"])
+    if file_type == "pdf":
+        with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
+            text = "\n".join([page.get_text() for page in doc])
+    elif file_type == "docx":
+        doc = docx.Document(uploaded_file)
+        text = "\n".join([para.text for para in doc.paragraphs])
+    elif file_type == 'doc':
+        # Convert .doc to .docx using pypandoc
+        try:
+            docx_bytes = pypandoc.convert_file(uploaded_file, "docx", format="doc")
+            doc = docx.Document(BytesIO(docx_bytes))
+            return "\n".join([para.text for para in doc.paragraphs])
+        except Exception as e:
+            return f"Error reading .doc file: {e}"
+    elif file_type == "txt":
+        text = uploaded_file.read().decode("utf-8")
+    else:
+        text = ""
+
+    return text
 
 
-# Cache the file reading, text splitting, and embedding creation
+# Function to extract text from a webpage
+def extract_text_from_url(url):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        text = soup.get_text(separator="\n", strip=True)
+        return text
+    except requests.exceptions.RequestException as e:
+        st.error(f"Failed to fetch the URL: {e}")
+        return ""
+
+
+# Cache the file reading and processing
 @st.cache_data
-def read_and_process_file(uploaded_file):
-    # Read the PDF from BytesIO
-    pdf_data = uploaded_file.read()
-    pdf_stream = BytesIO(pdf_data)  # Create a BytesIO stream from the uploaded file
+def read_and_process_file(uploaded_file=None, url=None):
+    if uploaded_file:
+        text = extract_text_from_file(uploaded_file)
+    elif url:
+        text = extract_text_from_url(url)
+    else:
+        text = ""
 
-    # Load PDF using fitz (PyMuPDF) and extract text
-    doc = fitz.open(stream=pdf_stream)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-
-    # Split text into optimized chunks
+    # Split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     docs = text_splitter.create_documents([text])
 
     # Convert to embeddings
-    start_time = time.time()
     model_name = "sentence-transformers/all-mpnet-base-v2"
     model_kwargs = {"device": "cpu"}
     encode_kwargs = {"normalize_embeddings": False}
@@ -59,74 +81,63 @@ def read_and_process_file(uploaded_file):
 
     doc_texts = [doc.page_content for doc in docs]
     doc_embeddings = embeddings.embed_documents(doc_texts)
-    end_time = time.time()
 
     return doc_texts, doc_embeddings, embeddings
 
 
-# Create FAISS vector store
+# Cache the vector store creation
 @st.cache_data
-def create_vectorstore(doc_embeddings, doc_texts, _embeddings):
+def create_vectorstore(doc_texts, _embeddings):
     vectorstore = FAISS.from_texts(doc_texts, _embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
-
     return retriever
 
 
-# Load LLM model
+# Cache the LLM model loading
 @st.cache_data
 def load_llm(huggingface_api_key):
     llm = HuggingFaceEndpoint(
         repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
         token=huggingface_api_key,
-        temperature=0.6,
+        temperature=0.5,
     )
     return llm
 
 
-# Streamlit logic
-if uploaded_file is not None:
-    st.write("Reading file...")
+# Streamlit UI
+st.title("📄 AccuFetch")
+st.subheader("Find What Matters, Instantly!")
+st.info(
+    "Upload a document or enter a web link to analyze its content. This may take some time for inital processing."
+)
+
+st.sidebar.header("Input Options")
+uploaded_file = st.sidebar.file_uploader(
+    "Upload a PDF, DOCX, TXT file", type=["pdf", "doc", "docx", "txt"]
+)
+web_link = st.sidebar.text_input("Or enter a web link (URL):")
+
+if uploaded_file or web_link:
+    st.write("Reading and processing the document. Please wait...")
     start_time = time.time()
 
-    # Call the caching functions
-    doc_texts, doc_embeddings, embeddings = read_and_process_file(uploaded_file)
-
-    end_time = time.time()
-    st.write(f"✅ File processing completed in {end_time - start_time:.2f} seconds")
-
-    # Create vector store
-    st.write("Creating vector store...")
-    start_time = time.time()
-
-    retriever = create_vectorstore(doc_embeddings, doc_texts, embeddings)
-
-    end_time = time.time()
-    st.write(
-        f"✅ Vector store creation completed in {end_time - start_time:.2f} seconds"
+    # Process the file or URL
+    doc_texts, doc_embeddings, embeddings = read_and_process_file(
+        uploaded_file=uploaded_file, url=web_link
     )
-
-    # Load LLM model
-    st.write("Loading LLM model...")
-    start_time = time.time()
-
+    retriever = create_vectorstore(doc_texts, embeddings)
     llm = load_llm(huggingface_api_key)
     qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
     end_time = time.time()
-    st.write(f"✅ LLM model loaded in {end_time - start_time:.2f} seconds")
+    st.write(f"✅ Processing completed in {end_time - start_time:.2f} seconds")
 
-    # User Input
-    query = st.text_input("Ask a question about the document and click Submit button:")
+    # User Query Input
+    query = st.text_input("Ask a question about the document or webpage:")
     submit_button = st.button("Submit")
 
     if submit_button and query:
         st.write("Searching for the answer...")
-        start_time = time.time()
-
         response = qa_chain.invoke({"query": query})
-
-        end_time = time.time()
-        st.write(f"✅ Answer retrieved in {end_time - start_time:.2f} seconds")
         st.write("### Answer:")
         st.write(response["result"])
