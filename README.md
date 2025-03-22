@@ -18,6 +18,7 @@ To run AccuFetch locally, clone this repository and install the required depende
 git clone https://github.com/czhang87/doc_retrieval_ai_assistant.git
 cd doc_retrieval_ai_assistant
 pip install -r requirements.txt
+```
 
 ## API Key
 
