@@ -1,4 +1,3 @@
-```markdown
 # AccuFetch
 
 AccuFetch is a document retrieval assistant that uses AI to help you find relevant information from documents and webpages instantly. With AccuFetch, you can upload PDF, DOCX, or TXT files or simply provide a URL to extract content and search for answers to your queries.
@@ -16,10 +15,9 @@ AccuFetch is a document retrieval assistant that uses AI to help you find releva
 To run AccuFetch locally, clone this repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/your-repository/accufetch.git
-cd accufetch
+git clone https://github.com/czhang87/doc_retrieval_ai_assistant.git
+cd doc_retrieval_ai_assistant
 pip install -r requirements.txt
-```
 
 ## API Key
 
@@ -65,17 +63,13 @@ streamlit run app.py
 - `streamlit`
 - `PyMuPDF` (for PDF processing)
 - `python-docx` (for DOCX processing)
-- `requests` (for fetching webpage content)
-- `beautifulsoup4` (for parsing HTML)
+- `bs4` (for parsing HTML)
 - `langchain`
+- `langchain_community`
 - `faiss-cpu`
 - `huggingface_hub`
+- `numpy`
 
-Install dependencies with:
-
-```bash
-pip install streamlit PyMuPDF python-docx requests beautifulsoup4 langchain faiss-cpu huggingface_hub
-```
 
 ## License
 
@@ -88,4 +82,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [FAISS](https://github.com/facebookresearch/faiss) is used for fast similarity search.
 
 For any issues or suggestions, feel free to open an issue or pull request in this repository.
-```
