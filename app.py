@@ -1,10 +1,8 @@
 import os
-from io import BytesIO
 import time
 import streamlit as st
 import fitz  # PyMuPDF
 import docx
-import pypandoc
 import requests
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -17,7 +15,6 @@ from langchain_huggingface import HuggingFaceEndpoint
 huggingface_api_key = st.secrets["huggingface_api_key"]
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_key
 
-
 # Function to extract text from different file types
 def extract_text_from_file(uploaded_file):
     file_type = uploaded_file.name.split(".")[-1].lower()
@@ -28,14 +25,6 @@ def extract_text_from_file(uploaded_file):
     elif file_type == "docx":
         doc = docx.Document(uploaded_file)
         text = "\n".join([para.text for para in doc.paragraphs])
-    elif file_type == 'doc':
-        # Convert .doc to .docx using pypandoc
-        try:
-            docx_bytes = pypandoc.convert_file(uploaded_file, "docx", format="doc")
-            doc = docx.Document(BytesIO(docx_bytes))
-            return "\n".join([para.text for para in doc.paragraphs])
-        except Exception as e:
-            return f"Error reading .doc file: {e}"
     elif file_type == "txt":
         text = uploaded_file.read().decode("utf-8")
     else:
@@ -113,7 +102,7 @@ st.info(
 
 st.sidebar.header("Input Options")
 uploaded_file = st.sidebar.file_uploader(
-    "Upload a PDF, DOCX, TXT file", type=["pdf", "doc", "docx", "txt"]
+    "Upload a PDF, DOCX, TXT file", type=["pdf", "docx", "txt"]
 )
 web_link = st.sidebar.text_input("Or enter a web link (URL):")
 
@@ -138,6 +127,11 @@ if uploaded_file or web_link:
 
     if submit_button and query:
         st.write("Searching for the answer...")
-        response = qa_chain.invoke({"query": query})
+
+        system_prompt = "You are an AI document retrieval assistant. Answer the question only based on " \
+        "the input document and eliminate hallucination. Don't show the question. Only show the answer."
+        combined_input = system_prompt + "\n" + query
+
+        response = qa_chain.invoke({"query": combined_input})
         st.write("### Answer:")
         st.write(response["result"])
