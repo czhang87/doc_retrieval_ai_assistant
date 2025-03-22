@@ -15,6 +15,7 @@ from langchain_huggingface import HuggingFaceEndpoint
 huggingface_api_key = st.secrets["huggingface_api_key"]
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_key
 
+
 # Function to extract text from different file types
 def extract_text_from_file(uploaded_file):
     file_type = uploaded_file.name.split(".")[-1].lower()
@@ -128,8 +129,10 @@ if uploaded_file or web_link:
     if submit_button and query:
         st.write("Searching for the answer...")
 
-        system_prompt = "You are an AI document retrieval assistant. Answer the question only based on " \
-        "the input document and eliminate hallucination. Don't show the question. Only show the answer."
+        system_prompt = (
+            "You are an AI document retrieval assistant. Answer the question only based on "
+            "the input document and eliminate hallucination. Don't show the question. Only show the answer."
+        )
         combined_input = system_prompt + "\n" + query
 
         response = qa_chain.invoke({"query": combined_input})
