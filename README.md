@@ -1,72 +1,91 @@
-# AccuFetch: Find What Matters, Instantly!
+```markdown
+# AccuFetch
 
-## Overview
-
-AccuFetch is an AI-powered document retrieval assistant that allows users to upload PDF files, extract text, and query the content using a large language model (LLM). It leverages FAISS for efficient vector storage, PyMuPDF (fitz) for fast PDF text extraction, and Hugging Face embeddings for semantic search.
+AccuFetch is a document retrieval assistant that uses AI to help you find relevant information from documents and webpages instantly. With AccuFetch, you can upload PDF, DOCX, or TXT files or simply provide a URL to extract content and search for answers to your queries.
 
 ## Features
 
-- **Fast PDF Text Extraction**: Uses PyMuPDF (fitz) with multithreading for quick text extraction.
-- **Text Chunking**: Splits extracted text into optimized segments for better retrieval performance.
-- **Efficient Vector Search**: FAISS-based storage for quick document search and retrieval.
-- **Semantic Search with LLM**: Uses Hugging Face models to process and respond to user queries based on document content.
-- **Streamlit UI**: Simple and interactive interface for uploading PDFs and querying data.
+- **File Upload Support**: Upload PDFs, DOCX, or TXT files for processing.
+- **Web Scraping**: Input a URL, and AccuFetch will scrape the content of the webpage.
+- **Text Extraction**: Automatically extracts text from various file types and web pages.
+- **AI-Powered Search**: Uses a large language model (LLM) to retrieve answers based on the content of your document or webpage.
+- **Instant Results**: Get accurate answers quickly from the uploaded files or websites.
 
 ## Installation
 
-### Prerequisites
+To run AccuFetch locally, clone this repository and install the required dependencies:
 
-Ensure you have Python 3.8+ installed.
-
-### Install Required Dependencies
-
-Run the following command to install all required Python libraries:
-
-```sh
-pip install streamlit pymupdf langchain faiss-cpu sentence-transformers concurrent.futures
+```bash
+git clone https://github.com/your-repository/accufetch.git
+cd accufetch
+pip install -r requirements.txt
 ```
 
-If you want to use GPU acceleration, install FAISS with GPU support:
+## API Key
 
-```sh
-pip install faiss-gpu
+AccuFetch uses the HuggingFace API for the large language model. You will need to provide an API key in the Streamlit secrets.
+
+1. Go to [HuggingFace](https://huggingface.co) and sign up or log in.
+2. Create an API key under your account settings.
+3. Save the key in the `secrets.toml` file in your Streamlit app directory:
+
+```toml
+[huggingface_api_key]
+huggingface_api_key = "your-api-key-here"
 ```
 
 ## Usage
 
-1. **Run the application**:
+1. Launch the Streamlit app:
 
-```sh
+```bash
 streamlit run app.py
 ```
 
-2. **Upload a PDF file** through the sidebar.
-3. **Ask a question** about the document in the query input field.
-4. **Receive an AI-generated answer** based on the document's content.
+2. Open the app in your browser.
+3. **Upload a Document**: You can upload a PDF, DOCX, or TXT file from your computer.
+4. **Enter a Web Link**: If you have a URL to a webpage, you can paste it in the input field.
+5. **Ask Questions**: After processing, you can ask questions about the content of the document or webpage.
 
-## Configuration
+### Example Queries:
+- "What is the summary of the document?"
+- "Find all mentions of financial terms."
+- "What are the key points in the article?"
 
-### Hugging Face API Key
+## File Processing Flow
 
-Ensure you have a valid Hugging Face API key. Set it in `secret_api_keys.py`:
+1. **Extract Text**: The app extracts text from uploaded files or web pages.
+2. **Chunk Text**: The text is split into smaller, manageable chunks for efficient processing.
+3. **Generate Embeddings**: The app uses a HuggingFace model to generate embeddings for the text.
+4. **Create Vector Store**: A FAISS index is created to enable fast retrieval of relevant information.
+5. **Search**: Users can ask questions, and the AI retrieves the most relevant chunks of text to generate answers.
 
-```python
-huggingface_api_key = "your_huggingface_api_key"
+## Requirements
+
+- `streamlit`
+- `PyMuPDF` (for PDF processing)
+- `python-docx` (for DOCX processing)
+- `requests` (for fetching webpage content)
+- `beautifulsoup4` (for parsing HTML)
+- `langchain`
+- `faiss-cpu`
+- `huggingface_hub`
+
+Install dependencies with:
+
+```bash
+pip install streamlit PyMuPDF python-docx requests beautifulsoup4 langchain faiss-cpu huggingface_hub
 ```
-
-## Optimizations & Performance Enhancements
-
-- **Multithreaded PDF Processing**: Uses `concurrent.futures.ThreadPoolExecutor` to extract text faster.
-- **Optimized Text Splitting**: Uses `RecursiveCharacterTextSplitter` for efficient chunking.
-- **GPU Support**: Can be enabled for embeddings and FAISS indexing (if CUDA is available).
-
-## Future Enhancements
-
-- Support for additional document formats (DOCX, TXT, and link, etc.).
-- Improved retrieval accuracy with hybrid search (BM25 + embeddings).
-- Integration with cloud storage for document management.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Acknowledgements
+
+- The application uses the [HuggingFace API](https://huggingface.co) for AI models.
+- The project uses [Streamlit](https://streamlit.io) for building the user interface.
+- [FAISS](https://github.com/facebookresearch/faiss) is used for fast similarity search.
+
+For any issues or suggestions, feel free to open an issue or pull request in this repository.
+```
