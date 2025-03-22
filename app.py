@@ -98,7 +98,7 @@ def load_llm(huggingface_api_key):
 st.title("📄 AccuFetch")
 st.subheader("Find What Matters, Instantly!")
 st.info(
-    "Upload a document or enter a web link to analyze its content. This may take some time for inital processing."
+    "Upload a document or enter a web link at the sidebar to analyze its content. This may take some time for inital processing."
 )
 
 st.sidebar.header("Input Options")
